@@ -1,0 +1,36 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy Datalake infraStructure
+    runs-on: ubuntu-latest
+
+    step:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: HashiCorp - Setup Terraform
+        uses: hashicorp/setup-terraform@v1.2.1
+
+      - name: Configure azure credential
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Iac Apply
+        env:
+          COMMAND_IAC: terraform
+        run: |
+          cd infrastructure
+          $COMMAND_IAC init
+          $COMMAND_IAC validade
+          $COMMAND_IAC plan -var ${{ secrets.APP_PASSWORD }} -var ${{ secrets.AZURE_TENANT_ID }} -var ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          $COMMAND_IAC apply -var ${{ secrets.APP_PASSWORD }} -var ${{ secrets.AZURE_TENANT_ID }} -var ${{ secrets.AZURE_SUBSCRIPTION_ID -auto-approve }}
